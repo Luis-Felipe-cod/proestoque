@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { View, Text, FlatList, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -12,9 +12,11 @@ import {
   formatarPreco,
   type Produto,
 } from "../../src/data/mockData";
+import { useAuth } from "../../src/contexts/AuthContext";
 import { Colors, Typography, Spacing, Radius } from "../../src/constants/theme";
 
 export default function HomeScreen() {
+  const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   const alertas = useMemo(() => getProdutosComEstoqueBaixo(), []);
@@ -25,6 +27,8 @@ export default function HomeScreen() {
     setTimeout(() => setRefreshing(false), 1500);
   }, []);
 
+  const hora = new Date().getHours();
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
 
   const cardsResumo = [
     {
@@ -53,52 +57,36 @@ export default function HomeScreen() {
     },
   ];
 
-  const DashboardHeader = () => (
+  const DashboardHeader = () => {
+  const hora = new Date().getHours();
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+
+  return (
     <View style={styles.headerContainer}>
       <View style={styles.headerTop}>
-        <View>
-          <Text style={styles.greeting}>Olá, João 👋</Text>
-          <Text style={styles.subtitle}>Visão geral do estoque</Text>
+        <View style={styles.userSection}>
+          {/* Avatar com a inicial do nome real */}
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {user?.nome?.charAt(0).toUpperCase() ?? "?"}
+            </Text>
+          </View>
+          
+          <View>
+            <Text style={styles.greeting}>
+              {saudacao}, {user?.nome?.split(" ")[0] || "Usuário"} 👋
+            </Text>
+            <Text style={styles.subtitle}>Visão geral do estoque</Text>
+          </View>
         </View>
+        
         <TouchableOpacity onPress={() => router.push("/(tabs)/produtos")}>
           <Ionicons name="add-circle" size={40} color={Colors.primary[600]} />
         </TouchableOpacity>
       </View>
-
-      <View style={styles.resumoGrid}>
-        {cardsResumo.map((card) => (
-          <View key={card.id} style={styles.resumoCard}>
-            <View style={styles.iconContainer}>
-              <Ionicons name={card.icone} size={24} color={Colors.primary[600]} />
-            </View>
-            <Text style={styles.resumoValor}>{card.valor}</Text>
-            <Text style={styles.resumoTitulo}>{card.titulo}</Text>
-          </View>
-        ))}
-      </View>
-
-      {alertas.length > 0 && (
-        <View style={styles.alertaContainer}>
-          <Text style={styles.alertaTitulo}>⚠️ Estoque crítico ({alertas.length})</Text>
-          {alertas.slice(0, 3).map((produto) => (
-            <View key={produto.id} style={styles.alertaItem}>
-              <Text style={styles.alertaProduto}>{produto.nome}</Text>
-              <Text style={styles.alertaQuantidade}>
-                {produto.quantidade} / {produto.quantidadeMinima} {produto.unidade}
-              </Text>
-            </View>
-          ))}
-          {alertas.length > 3 && (
-            <TouchableOpacity>
-              <Text style={styles.alertaVerTodos}>Ver todos os {alertas.length} alertas →</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-
-      <Text style={styles.sectionTitle}>Produtos recentes</Text>
     </View>
   );
+};
 
   const renderProduto = ({ item }: { item: Produto }) => {
     const emAlerta = item.quantidade < item.quantidadeMinima;
@@ -154,7 +142,6 @@ export default function HomeScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -173,6 +160,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing[6],
   },
+  userSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing[3],
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.primary[100],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: "bold",
+    color: Colors.primary[600],
+  },
   greeting: {
     fontSize: Typography.fontSize.xl,
     fontWeight: "bold",
@@ -181,7 +186,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: Typography.fontSize.sm,
     color: Colors.textSecondary,
-    marginTop: Spacing[1],
   },
   resumoGrid: {
     flexDirection: "row",
@@ -191,25 +195,24 @@ const styles = StyleSheet.create({
     marginBottom: Spacing[6],
   },
   resumoCard: {
-    width: "48%",
+    width: "47.5%",
     backgroundColor: Colors.surface,
     padding: Spacing[4],
     borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  iconContainer: {
+  cardIcon: {
     marginBottom: Spacing[2],
   },
   resumoValor: {
-    fontSize: Typography.fontSize.lg,
+    fontSize: Typography.fontSize.md,
     fontWeight: "bold",
     color: Colors.textPrimary,
   },
   resumoTitulo: {
     fontSize: Typography.fontSize.sm,
     color: Colors.textSecondary,
-    marginTop: 2,
   },
   alertaContainer: {
     backgroundColor: Colors.danger.bg,
@@ -230,11 +233,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: Spacing[2],
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(248, 113, 113, 0.3)', 
+    borderBottomColor: "rgba(248, 113, 113, 0.2)",
   },
   alertaProduto: {
     color: Colors.danger.text,
-    fontWeight: "500",
   },
   alertaQuantidade: {
     color: Colors.danger.text,
@@ -278,7 +280,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.base,
     fontWeight: "600",
     color: Colors.textPrimary,
-    marginBottom: 2,
   },
   produtoQuantidade: {
     fontSize: Typography.fontSize.sm,
