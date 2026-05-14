@@ -1,111 +1,68 @@
-import { useState } from 'react';
-import { ScrollView, SafeAreaView, StyleSheet, View } from 'react-native';
-import { Link } from 'expo-router';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Input } from '../../src/components/Input';
+import { Button } from '../../src/components/Button';
+import { LogoProEstoque } from '../../src/components/LogoProEstoque';
 
-import { Button } from '@/src/components/Button';
-import { Input } from '@/src/components/Input';
-import { LogoProEstoque } from '@/src/components/LogoProEstoque';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/src/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+export default function Cadastro() {
+  const router = useRouter();
+  
+  const [form, setForm] = useState({ nome: '', email: '', senha: '', confirmarSenha: '' });
+  const [erroSenha, setErroSenha] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-export default function SignupScreen() {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? 'light'];
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
+  const updateForm = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
 
-  function handleCreateAccount() {
-    if (password !== confirmPassword) {
-      setPasswordError('As senhas não correspondem');
+  const handleCadastro = () => {
+    setErroSenha('');
+    if (form.senha !== form.confirmarSenha) {
+      setErroSenha('As senhas não coincidem');
       return;
     }
-
-    setPasswordError('');
-    setLoading(true);
+    
+    setIsLoading(true);
     setTimeout(() => {
-      setLoading(false);
+      setIsLoading(false);
+      router.replace('/(tabs)');
     }, 2000);
-  }
+  };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}> 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <ThemedView style={styles.container}>
-          <LogoProEstoque size="md" />
-          <ThemedText type="title" style={styles.title}>
-            Criar conta
-          </ThemedText>
-          <Input label="Nome" value={name} onChangeText={setName} placeholder="Seu nome" />
-          <Input
-            label="E-mail"
-            value={email}
-            onChangeText={setEmail}
-            placeholder="seu@email.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            icon="envelope"
-          />
-          <Input
-            label="Senha"
-            value={password}
-            onChangeText={setPassword}
-            placeholder="********"
-            secureTextEntry
-            icon="lock.fill"
-          />
-          <Input
-            label="Confirmar senha"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder="********"
-            secureTextEntry
-            icon="lock.fill"
-            error={passwordError}
-          />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.header}>
+              <LogoProEstoque size="md" />
+              <Text style={styles.title}>Criar conta</Text>
+            </View>
 
-          <Button title="Criar Conta" fullWidth loading={loading} onPress={handleCreateAccount} />
+            <View style={styles.form}>
+              <Input label="Nome completo" placeholder="João Silva" value={form.nome} onChangeText={(t) => updateForm('nome', t)} />
+              <Input label="E-mail" placeholder="joao@email.com" value={form.email} onChangeText={(t) => updateForm('email', t)} keyboardType="email-address" autoCapitalize="none" />
+              <Input label="Senha" placeholder="••••••" value={form.senha} onChangeText={(t) => updateForm('senha', t)} secureTextEntry />
+              <Input label="Confirmar senha" placeholder="••••" value={form.confirmarSenha} onChangeText={(t) => updateForm('confirmarSenha', t)} secureTextEntry error={erroSenha} />
 
-          <View style={styles.footerRow}>
-            <ThemedText>Já tem conta?</ThemedText>
-            <Link href="/login" style={[styles.link, { color: theme.tint }]}>Voltar ao Login</Link>
-          </View>
-        </ThemedView>
-      </ScrollView>
+              <Button label={isLoading ? "Carregando..." : "Criar Conta"} onPress={handleCadastro} fullWidth disabled={isLoading} />
+
+              <TouchableOpacity onPress={() => router.back()} style={styles.footerLink}>
+                <Text style={styles.footerText}>Já tenho conta</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  container: {
-    width: '100%',
-    gap: 18,
-  },
-  title: {
-    marginBottom: 8,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  link: {
-    textDecorationLine: 'underline',
-    fontSize: 16,
-  },
+  scrollContent: { flexGrow: 1, padding: 24, justifyContent: 'center' },
+  header: { alignItems: 'center', marginBottom: 32 },
+  title: { fontSize: 24, fontWeight: 'bold', marginTop: 16 },
+  form: { gap: 16 },
+  footerLink: { alignItems: 'center', marginTop: 16 },
+  footerText: { color: '#7c3aed', fontWeight: 'bold' },
 });

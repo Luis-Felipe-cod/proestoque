@@ -1,114 +1,93 @@
-import React from 'react';
-import {
-  StyleProp,
-  StyleSheet,
-  Text,
-  TextInput,
-  TextInputProps,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { useState } from "react";
+import { View, TextInput, Text, Pressable, StyleSheet, TextInputProps } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Colors, Typography, Spacing, Radius } from "@/src/constants/theme";
 
-import { IconSymbol, type IconSymbolName } from '@/components/ui/icon-symbol';
-import { Colors, Radii, Spacing, Typography } from '@/src/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-type InputProps = {
+interface InputProps extends TextInputProps {
   label?: string;
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder?: string;
-  secureTextEntry?: boolean;
   error?: string;
-  icon?: IconSymbolName;
-  rightIcon?: IconSymbolName;
-  onRightIconPress?: () => void;
-  style?: StyleProp<ViewStyle>;
-} & Pick<TextInputProps, 'keyboardType' | 'autoCapitalize'>;
+  hint?: string;
+  leftIcon?: keyof typeof Ionicons.glyphMap;
+  isPassword?: boolean;
+}
 
 export function Input({
   label,
-  value,
-  onChangeText,
-  placeholder,
-  secureTextEntry = false,
   error,
-  icon,
-  rightIcon,
-  onRightIconPress,
-  keyboardType = 'default',
-  autoCapitalize = 'none',
-  style,
+  hint,
+  leftIcon,
+  isPassword = false,
+  ...rest
 }: InputProps) {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? 'light'];
+  const [focused, setFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const hasError = !!error;
 
   return (
-    <View style={[styles.root, style]}>
-      {label ? <Text style={[styles.label, { color: theme.text }]}>{label}</Text> : null}
+    <View style={styles.wrapper}>
+      {label && <Text style={styles.label}>{label}</Text>}
+
       <View
         style={[
-          styles.inputWrapper,
-          {
-            backgroundColor: theme.card,
-            borderColor: error ? theme.error : theme.border,
-          },
-        ]}>
-        {icon ? <IconSymbol name={icon} color={theme.placeholder} size={20} style={styles.leadingIcon} /> : null}
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={theme.placeholder}
-          secureTextEntry={secureTextEntry}
-          keyboardType={keyboardType}
-          autoCapitalize={autoCapitalize}
-          style={[styles.input, { color: theme.text }]}
-        />
-        {rightIcon ? (
-          <IconSymbol
-            name={rightIcon}
-            size={20}
-            color={theme.tint}
-            onPress={onRightIconPress}
-            style={styles.trailingIcon}
+          styles.inputContainer,
+          focused && styles.focused,
+          hasError && styles.errorBorder,
+        ]}
+      >
+        {leftIcon && (
+          <Ionicons
+            name={leftIcon}
+            size={18}
+            color={focused ? Colors.primary[600] : Colors.neutral[400]}
+            style={styles.leftIcon}
           />
-        ) : null}
+        )}
+
+        <TextInput
+          style={styles.input}
+          placeholderTextColor={Colors.neutral[400]}
+          secureTextEntry={isPassword && !showPassword}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          {...rest}
+        />
+        {isPassword && (
+          <Pressable onPress={() => setShowPassword((v) => !v)} style={styles.rightIcon}>
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={18}
+              color={Colors.neutral[400]}
+            />
+          </Pressable>
+        )}
       </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {hasError && <Text style={styles.errorText}>{error}</Text>}
+      {!hasError && hint && <Text style={styles.hintText}>{hint}</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    width: '100%',
-    gap: Spacing.xs,
-  },
+  wrapper: { marginBottom: Spacing[4] },
   label: {
-    fontSize: Typography.label,
-    fontWeight: '600',
+    fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold,
+    color: Colors.neutral[700], marginBottom: Spacing[1],
   },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: Radii.small,
-    paddingHorizontal: Spacing.sm,
+  inputContainer: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: Colors.surface, borderRadius: Radius.lg,
+    borderWidth: 1.5, borderColor: Colors.border,
+    paddingHorizontal: Spacing[3],
   },
-  leadingIcon: {
-    marginRight: Spacing.xs,
-  },
-  trailingIcon: {
-    marginLeft: Spacing.xs,
-  },
+  focused:     { borderColor: Colors.primary[600] },
+  errorBorder: { borderColor: Colors.danger.border },
   input: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
-    fontSize: Typography.body,
+    flex: 1, paddingVertical: Spacing[3],
+    fontSize: Typography.fontSize.md, color: Colors.textPrimary,
   },
-  errorText: {
-    color: '#EF4444',
-    fontSize: Typography.label,
-  },
+  leftIcon:  { marginRight: Spacing[2] },
+  rightIcon: { padding: Spacing[1] },
+  errorText: { marginTop: Spacing[1], fontSize: Typography.fontSize.sm, color: Colors.danger.text },
+  hintText:  { marginTop: Spacing[1], fontSize: Typography.fontSize.sm, color: Colors.textSecondary },
 });

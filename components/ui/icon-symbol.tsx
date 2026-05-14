@@ -3,10 +3,10 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
 import { ComponentProps } from 'react';
-import { OpaqueColorValue, Pressable, type StyleProp, type TextStyle } from 'react-native';
+import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
 type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
-export type IconSymbolName = keyof typeof MAPPING;
+type IconSymbolName = keyof typeof MAPPING;
 
 /**
  * Add your SF Symbols to Material Icons mappings here.
@@ -18,11 +18,6 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
-  'gearshape.fill': 'settings',
-  envelope: 'mail',
-  'eye.fill': 'visibility',
-  'eye.slash': 'visibility-off',
-  'lock.fill': 'lock',
 } as IconMapping;
 
 /**
@@ -35,20 +30,12 @@ export function IconSymbol({
   size = 24,
   color,
   style,
-  onPress,
 }: {
   name: IconSymbolName;
   size?: number;
   color: string | OpaqueColorValue;
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
-  onPress?: () => void;
 }) {
-  const icon = <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
-
-  if (onPress) {
-    return <Pressable onPress={onPress}>{icon}</Pressable>;
-  }
-
-  return icon;
+  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
 }

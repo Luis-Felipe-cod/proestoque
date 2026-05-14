@@ -1,76 +1,87 @@
-import React from 'react';
-import {
-  ActivityIndicator,
-  GestureResponderEvent,
-  Pressable,
-  StyleProp,
-  StyleSheet,
-  Text,
-  ViewStyle,
-} from 'react-native';
+import { Pressable, Text, ActivityIndicator, StyleSheet, ViewStyle } from "react-native";
+import { Colors, Typography, Spacing, Radius } from "@/src/constants/theme";
 
-import { Colors, Radii, Spacing, Typography } from '@/src/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+type ButtonVariant = "primary" | "outline" | "ghost" | "danger";
+type ButtonSize    = "sm" | "md" | "lg";
 
-type ButtonProps = {
-  title: string;
-  onPress?: (event: GestureResponderEvent) => void;
-  variant?: 'primary' | 'secondary' | 'ghost';
-  disabled?: boolean;
+interface ButtonProps {
+  label: string;
+  onPress: () => void;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
+  disabled?: boolean;
   fullWidth?: boolean;
-  style?: StyleProp<ViewStyle>;
-};
+  icon?: React.ReactNode;
+}
 
 export function Button({
-  title,
+  label,
   onPress,
-  variant = 'primary',
-  disabled = false,
+  variant = "primary",
+  size = "md",
   loading = false,
+  disabled = false,
   fullWidth = false,
-  style,
+  icon,
 }: ButtonProps) {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? 'light'];
-  const backgroundColor =
-    variant === 'primary' ? theme.tint : variant === 'secondary' ? theme.card : 'transparent';
-  const textColor = variant === 'primary' ? theme.background : theme.text;
-  const borderColor = variant === 'secondary' ? theme.tint : 'transparent';
+  const isDisabled = disabled || loading;
 
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled || loading}
+      disabled={isDisabled}
       style={({ pressed }) => [
-        styles.button,
+        styles.base,
+        styles[variant],    
+        styles[`size_${size}`], 
         fullWidth && styles.fullWidth,
-        { backgroundColor, borderColor, opacity: pressed || disabled ? 0.75 : 1 },
-        style,
-      ]}>
+        pressed && !isDisabled && styles.pressed,
+        isDisabled && styles.disabled,
+      ]}
+    >
       {loading ? (
-        <ActivityIndicator color={textColor} />
+        <ActivityIndicator
+          size="small"
+          color={variant === "primary" ? Colors.white : Colors.primary[600]}
+        />
       ) : (
-        <Text style={[styles.text, { color: textColor }]}>{title}</Text>
+        <>
+          {icon && icon}
+          <Text style={[styles.label, styles[`label_${variant}`], styles[`labelSize_${size}`]]}>
+            {label}
+          </Text>
+        </>
       )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    borderRadius: Radii.medium,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  base: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: Spacing[2], borderRadius: Radius.lg, borderWidth: 1.5,
   },
-  fullWidth: {
-    width: '100%',
-  },
-  text: {
-    fontSize: Typography.body,
-    fontWeight: '600',
-  },
+  // Variantes
+  primary:  { backgroundColor: Colors.primary[600], borderColor: Colors.primary[600] },
+  outline:  { backgroundColor: "transparent", borderColor: Colors.primary[600] },
+  ghost:    { backgroundColor: "transparent", borderColor: "transparent" },
+  danger:   { backgroundColor: Colors.danger.bg, borderColor: Colors.danger.border },
+  // Tamanhos
+  size_sm:  { paddingVertical: Spacing[2], paddingHorizontal: Spacing[3] },
+  size_md:  { paddingVertical: Spacing[3], paddingHorizontal: Spacing[5] },
+  size_lg:  { paddingVertical: Spacing[4], paddingHorizontal: Spacing[6] },
+  // Estados
+  fullWidth:  { width: "100%" },
+  pressed:    { opacity: 0.85, transform: [{ scale: 0.98 }] },
+  disabled:   { opacity: 0.45 },
+  // Labels
+  label:         { fontWeight: Typography.fontWeight.semibold },
+  label_primary: { color: Colors.white },
+  label_outline: { color: Colors.primary[600] },
+  label_ghost:   { color: Colors.primary[600] },
+  label_danger:  { color: Colors.danger.text },
+  labelSize_sm:  { fontSize: Typography.fontSize.sm },
+  labelSize_md:  { fontSize: Typography.fontSize.md },
+  labelSize_lg:  { fontSize: Typography.fontSize.lg },
 });

@@ -1,41 +1,39 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../constants/theme';
 
-import { Colors } from '@/src/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+interface LogoProps {
+  size?: 'sm' | 'md' | 'lg';
+}
 
-type LogoSize = 'sm' | 'md' | 'lg';
+export function LogoProEstoque({ size = 'md' }: LogoProps) {
+  const sizeMap = {
+    sm: { icon: 24, text: 18 },
+    md: { icon: 32, text: 24 },
+    lg: { icon: 48, text: 32 },
+  };
 
-type LogoProEstoqueProps = {
-  size?: LogoSize;
-};
-
-const SIZE_MAP: Record<LogoSize, { icon: number; text: number; gap: number }> = {
-  sm: { icon: 28, text: 22, gap: 8 },
-  md: { icon: 36, text: 28, gap: 10 },
-  lg: { icon: 44, text: 34, gap: 12 },
-};
-
-export function LogoProEstoque({ size = 'md' }: LogoProEstoqueProps) {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? 'light'];
-  const { icon, text, gap } = SIZE_MAP[size];
+  const { icon, text } = sizeMap[size];
 
   return (
-    <View style={[styles.root, { gap }]}> 
-      <Ionicons name="bag-handle-outline" size={icon} color={Colors.primary[600]} />
-      <Text style={[styles.text, { color: theme.text, fontSize: text }]}>ProEstoque</Text>
+    <View style={styles.container}>
+      <Ionicons name="cube-outline" size={icon} color={Colors.primary[600]} />
+      <Text style={[styles.text, { fontSize: text, color: Colors.primary[600] }]}>
+        ProEstoque
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
+  container: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   text: {
-    fontFamily: 'System',
-    fontWeight: '700',
+    fontWeight: 'bold',
   },
 });

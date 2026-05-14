@@ -1,90 +1,64 @@
-export type ColorSchemeName = 'light' | 'dark';
-
 export const Colors = {
+  // Paleta primária
   primary: {
-    50: '#f5f3ff',
-    100: '#ede9fe',
-    300: '#c4b5fd',
-    500: '#8b5cf6',
-    600: '#7c3aed',
-    700: '#6d28d9',
-    900: '#4c1d95',
+    50:  "#f5f3ff",
+    100: "#ede9fe",
+    300: "#c4b5fd",
+    500: "#8b5cf6",
+    600: "#7c3aed",
+    700: "#6d28d9",
+    900: "#4c1d95",
   },
+  
+  // Tons neutros
   neutral: {
-    50: '#f9fafb',
-    100: '#f3f4f6',
-    200: '#e5e7eb',
-    400: '#9ca3af',
-    600: '#4b5563',
-    700: '#374151',
-    900: '#111827',
+    50:  "#f9fafb",
+    100: "#f3f4f6",
+    200: "#e5e7eb",
+    400: "#9ca3af",
+    600: "#4b5563",
+    700: "#374151",
+    900: "#111827",
   },
-  success: { bg: '#d1fae5', text: '#065f46', border: '#34d399' },
-  warning: { bg: '#fef3c7', text: '#92400e', border: '#fbbf24' },
-  danger: { bg: '#fee2e2', text: '#991b1b', border: '#f87171' },
-  info: { bg: '#dbeafe', text: '#1e40af', border: '#60a5fa' },
-  background: '#f9fafb',
-  surface: '#ffffff',
-  textPrimary: '#111827',
-  textSecondary: '#6b7280',
-  border: '#e5e7eb',
-  white: '#ffffff',
-  black: '#000000',
-  light: {
-    background: '#f9fafb',
-    card: '#ffffff',
-    text: '#111827',
-    tint: '#8b5cf6',
-    border: '#e5e7eb',
-    placeholder: '#6b7280',
-    muted: '#d1d5db',
-    success: '#22c55e',
-    warning: '#fbbf24',
-    error: '#ef4444',
-  },
-  dark: {
-    background: '#111827',
-    card: '#1f2937',
-    text: '#f9fafb',
-    tint: '#8b5cf6',
-    border: '#374151',
-    placeholder: '#9ca3af',
-    muted: '#6b7280',
-    success: '#34D399',
-    warning: '#fbbf24',
-    error: '#f87171',
-  },
-} as const;
 
-export const Fonts = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semiBold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
-  rounded: 'System',
-  mono: 'Courier New',
-} as const;
+  // Status
+  success: { bg: "#d1fae5", text: "#065f46", border: "#34d399" },
+  warning: { bg: "#fef3c7", text: "#92400e", border: "#fbbf24" },
+  danger:  { bg: "#fee2e2", text: "#991b1b", border: "#f87171" },
+  info:    { bg: "#dbeafe", text: "#1e40af", border: "#60a5fa" },
 
-export const Spacing = {
-  xxs: 4,
-  xs: 8,
-  sm: 12,
-  md: 16,
-  lg: 24,
-  xl: 32,
-  xxl: 40,
-} as const;
-
-export const Radii = {
-  small: 8,
-  medium: 14,
-  large: 24,
-} as const;
+  // Atalhos semânticos (os mais usados no dia a dia)
+  background: "#f9fafb",    // Fundo das telas
+  surface:    "#ffffff",    // Fundo de cards
+  textPrimary:   "#111827", // Texto principal
+  textSecondary: "#6b7280", // Texto secundário/legenda
+  border:        "#e5e7eb", // Bordas de inputs e cards
+  white:         "#ffffff",
+  black:         "#000000",
+};
 
 export const Typography = {
-  label: 12,
-  body: 16,
-  subtitle: 18,
-  title: 28,
-  hero: 34,
-} as const;
+  // Tamanhos de fonte padronizados
+  fontSize: {
+    xs:   10, sm: 12, base: 14, md: 16,
+    lg: 18, xl: 22, "2xl": 28, "3xl": 36,
+  },
+  fontWeight: {
+    regular: "400" as const,
+    medium:  "500" as const,
+    semibold:"600" as const,
+    bold:    "700" as const,
+    black:   "900" as const,
+  },
+  lineHeight: { tight: 1.2, normal: 1.5, relaxed: 1.8 },
+};
+
+export const Spacing = {
+  // Escala de 4px (padrão da indústria)
+  1: 4,   2: 8,  3: 12, 4: 16, 5: 20,
+  6: 24,  8: 32, 10: 40, 12: 48, 16: 64,
+};
+
+export const Radius = {
+  sm: 6, md: 8, lg: 12, xl: 16, full: 9999,
+};

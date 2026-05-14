@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "proestoque",
-    "slug": "proestoque",
+    "name": "proestoquenovo",
+    "slug": "proestoquenovo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "proestoque",
+    "scheme": "proestoquenovo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
