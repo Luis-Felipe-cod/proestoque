@@ -15,7 +15,6 @@ export default function TabsLayout() {
         },
       }}
     >
-
       <Tabs.Screen
         name="index"
         options={{
@@ -25,7 +24,6 @@ export default function TabsLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
         name="produtos"
         options={{
@@ -35,7 +33,6 @@ export default function TabsLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
         name="configuracoes"
         options={{

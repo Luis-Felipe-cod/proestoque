@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
+
 import { AuthProvider, useAuth } from "../src/contexts/AuthContext";
+import { ProductsProvider } from "../src/contexts/ProductsContext";
 import { Colors } from "../src/constants/theme";
 
 function NavigationGuard() {
@@ -40,7 +42,9 @@ function NavigationGuard() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <NavigationGuard />
+      <ProductsProvider>
+        <NavigationGuard />
+      </ProductsProvider>
     </AuthProvider>
   );
 }
