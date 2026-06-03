@@ -107,7 +107,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       <FlatList
-        data={produtos.slice(0, 5)} // Mostra apenas os 5 mais recentes
+        data={produtos.slice(0, 5)}
         keyExtractor={(item) => item.id}
         renderItem={renderProduto}
         ListHeaderComponent={DashboardHeader}

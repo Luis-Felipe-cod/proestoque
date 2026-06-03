@@ -1,79 +1,80 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '../services/api';
 
-type User = {
+interface User {
   id: string;
   nome: string;
   email: string;
-};
+}
 
-type AuthContextType = {
+interface AuthContextData {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
-  isAuthenticated: boolean;
-  login: (email: string, senha: string, nome?: string) => Promise<void>;
+  login: (email: string, senha: string) => Promise<void>;
+  registrar: (nome: string, email: string, senha: string) => Promise<void>;
   logout: () => Promise<void>;
-};
+}
+
+const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
 const STORAGE_KEYS = {
-  TOKEN: "@proestoque:token",
-  USER:  "@proestoque:user",
-} as const;
+  TOKEN: '@proestoque:token',
+  USER: '@proestoque:user'
+};
 
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    async function carregarSessao() {
-      try {
-        const [tokenSalvo, userString] = await AsyncStorage.multiGet([
-          STORAGE_KEYS.TOKEN,
-          STORAGE_KEYS.USER,
-        ]);
+    async function loadStorageData() {
+      const storedUser = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+      const storedToken = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
 
-        const token = tokenSalvo[1];
-        const user  = userString[1] ? JSON.parse(userString[1]) : null;
-
-        if (token && user) {
-          setToken(token);
-          setUser(user);
-        }
-      } catch (error) {
-        console.warn("Erro ao carregar sessão:", error);
-      } finally {
-        setIsLoading(false);
+      if (storedUser && storedToken) {
+        setUser(JSON.parse(storedUser));
       }
     }
-    carregarSessao();
+    loadStorageData();
   }, []);
 
-  const login = useCallback(async (email: string, senha: string, nome?: string) => {
+  const login = useCallback(async (email: string, senha: string) => {
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      if (!email || !senha) throw new Error("Preencha todos os campos");
-
-      const tokenSimulado = "token_simulado_" + Date.now();
-      const userSimulado: User = {
-        id: "user_1",
-        nome: nome || email.split("@")[0], // Se vier o nome do cadastro, ele usa! Se não, usa o e-mail.
-        email,
-      };
-
-// ... resto do código continua igual
+      const response = await api.post('/auth/login', { email, senha });
+      const { usuario, token } = response.data;
 
       await AsyncStorage.multiSet([
-        [STORAGE_KEYS.TOKEN, tokenSimulado],
-        [STORAGE_KEYS.USER, JSON.stringify(userSimulado)],
+        [STORAGE_KEYS.TOKEN, token],
+        [STORAGE_KEYS.USER, JSON.stringify(usuario)]
       ]);
 
-      setToken(tokenSimulado);
-      setUser(userSimulado);
+      setUser(usuario);
+    } catch (error: any) {
+      const mensagem = error.response?.data?.erro ?? 'Erro ao iniciar sessão';
+      throw new Error(mensagem);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const registrar = useCallback(async (nome: string, email: string, senha: string) => {
+    setIsLoading(true);
+    try {
+
+      const response = await api.post('/auth/registro', { nome, email, senha });
+      const { usuario, token } = response.data;
+
+      await AsyncStorage.multiSet([
+        [STORAGE_KEYS.TOKEN, token],
+        [STORAGE_KEYS.USER, JSON.stringify(usuario)]
+      ]);
+
+      setUser(usuario);
+    } catch (error: any) {
+      const mensagem = error.response?.data?.erro ?? 'Erro ao criar conta';
+      throw new Error(mensagem);
     } finally {
       setIsLoading(false);
     }
@@ -81,21 +82,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     await AsyncStorage.multiRemove([STORAGE_KEYS.TOKEN, STORAGE_KEYS.USER]);
-    setToken(null);
     setUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isLoading,
-        isAuthenticated: !!token,
-        login,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={{ user, isLoading, login, registrar, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -104,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth deve ser usado dentro de um <AuthProvider>");
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;
 }

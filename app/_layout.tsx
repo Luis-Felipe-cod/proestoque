@@ -7,7 +7,10 @@ import { ProductsProvider } from "../src/contexts/ProductsContext";
 import { Colors } from "../src/constants/theme";
 
 function NavigationGuard() {
-  const { isAuthenticated, isLoading } = useAuth();
+
+  const { user, isLoading } = useAuth();
+  const isAuthenticated = !!user; 
+
   const segments = useSegments();
   const router = useRouter();
 

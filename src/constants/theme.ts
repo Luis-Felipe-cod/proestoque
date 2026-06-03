@@ -38,7 +38,6 @@ export const Colors = {
 };
 
 export const Typography = {
-  // Tamanhos de fonte padronizados
   fontSize: {
     xs:   10, sm: 12, base: 14, md: 16,
     lg: 18, xl: 22, "2xl": 28, "3xl": 36,
@@ -54,7 +53,6 @@ export const Typography = {
 };
 
 export const Spacing = {
-  // Escala de 4px (padrão da indústria)
   1: 4,   2: 8,  3: 12, 4: 16, 5: 20,
   6: 24,  8: 32, 10: 40, 12: 48, 16: 64,
 };

@@ -1,110 +1,84 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Input } from '../../src/components/Input';
+import { useState } from 'react';
+import { View, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { Link, router } from 'expo-router';
 import { Button } from '../../src/components/Button';
-import { LogoProEstoque } from '../../src/components/LogoProEstoque';
+import { Input } from '../../src/components/Input';
 import { useAuth } from '../../src/contexts/AuthContext';
 
 export default function Cadastro() {
-  const router = useRouter();
-  const { login } = useAuth();
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
   
-  const [form, setForm] = useState({ nome: '', email: '', senha: '', confirmarSenha: '' });
-  const [erroSenha, setErroSenha] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const updateForm = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
+  const { registrar, isLoading } = useAuth();
 
   const handleCadastro = async () => {
-    setErroSenha('');
-    
-    if (!form.nome || !form.email || !form.senha) {
-      Alert.alert("Atenção", "Preencha todos os campos obrigatórios.");
+    if (!nome || !email || !senha || !confirmarSenha) {
+      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
       return;
     }
 
-    if (form.senha !== form.confirmarSenha) {
-      setErroSenha('As senhas não coincidem');
+    if (senha !== confirmarSenha) {
+      Alert.alert('Erro', 'As senhas não coincidem.');
       return;
     }
-    
-    setIsLoading(true);
+
+    if (senha.length < 6) {
+      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
     try {
-      await login(form.email, form.senha, form.nome);
-    } catch (error) {
-      Alert.alert("Erro", "Não foi possível criar a conta. Tente novamente.");
-    } finally {
-      setIsLoading(false);
+      await registrar(nome, email, senha);
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      Alert.alert('Erro no Registo', error.message);
     }
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            <View style={styles.header}>
-              <LogoProEstoque size="md" />
-              <Text style={styles.title}>Criar conta</Text>
-            </View>
+    <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Criar Conta</Text>
+          <Text style={styles.subtitle}>Preencha os seus dados para começar</Text>
+        </View>
 
-            <View style={styles.form}>
-              <Input 
-                label="Nome completo" 
-                placeholder="João Silva" 
-                value={form.nome} 
-                onChangeText={(t) => updateForm('nome', t)} 
-              />
-              <Input 
-                label="E-mail" 
-                placeholder="joao@email.com" 
-                value={form.email} 
-                onChangeText={(t) => updateForm('email', t)} 
-                keyboardType="email-address" 
-                autoCapitalize="none" 
-              />
-              <Input 
-                label="Senha" 
-                placeholder="••••••" 
-                value={form.senha} 
-                onChangeText={(t) => updateForm('senha', t)} 
-                secureTextEntry 
-              />
-              <Input 
-                label="Confirmar senha" 
-                placeholder="••••" 
-                value={form.confirmarSenha} 
-                onChangeText={(t) => updateForm('confirmarSenha', t)} 
-                secureTextEntry 
-                error={erroSenha} 
-              />
+        <View style={styles.form}>
+          <Input label="Nome completo" placeholder="Digite o seu nome" value={nome} onChangeText={setNome} autoCapitalize="words" />
+          <Input label="E-mail" placeholder="Digite o seu e-mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+          <Input label="Senha" placeholder="Crie uma senha" value={senha} onChangeText={setSenha} secureTextEntry />
+          <Input label="Confirmar Senha" placeholder="Confirme a sua senha" value={confirmarSenha} onChangeText={setConfirmarSenha} secureTextEntry />
 
-              <Button 
-                label="Criar Conta" 
-                onPress={handleCadastro} 
-                fullWidth 
-                loading={isLoading} 
-                disabled={isLoading} 
-              />
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#0284c7" style={{ marginTop: 20 }} />
+          ) : (
+            <Button label="Registar" onPress={handleCadastro} />
+          )}
+        </View>
 
-              <TouchableOpacity onPress={() => router.back()} style={styles.footerLink}>
-                <Text style={styles.footerText}>Já tenho conta</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Já tem uma conta? </Text>
+          <Link href="/login" asChild>
+            <TouchableOpacity>
+              <Text style={styles.loginLink}>Iniciar Sessão</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { flexGrow: 1, padding: 24, justifyContent: 'center' },
-  header: { alignItems: 'center', marginBottom: 32 },
-  title: { fontSize: 24, fontWeight: 'bold', marginTop: 16 },
+  scrollContainer: { flexGrow: 1 },
+  container: { flex: 1, padding: 24, backgroundColor: '#f8fafc', justifyContent: 'center' },
+  header: { marginBottom: 32 },
+  title: { fontSize: 32, fontWeight: 'bold', color: '#0f172a', marginBottom: 8 },
+  subtitle: { fontSize: 16, color: '#64748b' },
   form: { gap: 16 },
-  footerLink: { alignItems: 'center', marginTop: 16 },
-  footerText: { color: '#7c3aed', fontWeight: 'bold' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 32 },
+  footerText: { color: '#64748b', fontSize: 14 },
+  loginLink: { color: '#0284c7', fontSize: 14, fontWeight: 'bold' },
 });
