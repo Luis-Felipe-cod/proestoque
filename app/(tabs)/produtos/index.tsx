@@ -1,18 +1,26 @@
 import { useState, useMemo, useCallback } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useProducts } from "../../../src/contexts/ProductsContext";
-import { CATEGORIAS_MOCK } from "../../../src/data/mockData";
+import { useCategorias } from "../../../src/hooks/useCategorias";
 import { Input } from "../../../src/components/Input";
+import { LoadingView } from "../../../src/components/LoadingView";
+import { ErrorView } from "../../../src/components/ErrorView";
 import { Colors, Spacing } from "../../../src/constants/theme";
 
 export default function ListaProdutos() {
-  const { produtos } = useProducts();
+  const { produtos, isLoading, error, carregarProdutos } = useProducts();
+  const { categorias } = useCategorias();
   const [busca, setBusca] = useState("");
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
-
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await carregarProdutos();
+    setRefreshing(false);
+  }, [carregarProdutos]);
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((p) => {
       const buscaOk = p.nome.toLowerCase().includes(busca.toLowerCase().trim());
@@ -40,20 +48,50 @@ export default function ListaProdutos() {
     );
   }, []);
 
+  if (isLoading && produtos.length === 0) {
+    return <LoadingView mensagem="Buscando produtos..." />;
+  }
+
+  if (error && produtos.length === 0) {
+    return <ErrorView mensagem={error} onRetry={carregarProdutos} />;
+  }
+
   return (
-    <SafeAreaView style={styles.safe} edges={["bottom"]}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <FlatList
         data={produtosFiltrados}
         keyExtractor={(item) => item.id}
         renderItem={renderProduto}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary[600]]}
+            tintColor={Colors.primary[600]}
+          />
+        }
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={{fontSize: 24, fontWeight: 'bold', color: Colors.textPrimary, marginBottom: 8}}>Produtos</Text>
             <Input value={busca} onChangeText={setBusca} placeholder="Buscar produto..." autoCapitalize="none" />
+            
             <View style={styles.chips}>
-              {CATEGORIAS_MOCK.map((cat) => (
-                <TouchableOpacity key={cat.id} style={[styles.chip, categoriaAtiva === cat.id && styles.chipAtivo]} onPress={() => setCategoriaAtiva(p => p === cat.id ? null : cat.id)}>
-                  <Text style={[styles.chipText, categoriaAtiva === cat.id && styles.chipTextoAtivo]}>{cat.nome}</Text>
+              <TouchableOpacity 
+                style={[styles.chip, categoriaAtiva === null && styles.chipAtivo]} 
+                onPress={() => setCategoriaAtiva(null)}
+              >
+                <Text style={[styles.chipText, categoriaAtiva === null && styles.chipTextoAtivo]}>Todos</Text>
+              </TouchableOpacity>
+              
+              {categorias.map((cat) => (
+                <TouchableOpacity 
+                  key={cat.id} 
+                  style={[styles.chip, categoriaAtiva === cat.id && styles.chipAtivo]} 
+                  onPress={() => setCategoriaAtiva(p => p === cat.id ? null : cat.id)}
+                >
+                  <Text style={[styles.chipText, categoriaAtiva === cat.id && styles.chipTextoAtivo]}>
+                    {cat.nome}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -67,8 +105,9 @@ export default function ListaProdutos() {
           </View>
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: Spacing[6] }}
+        contentContainerStyle={{ paddingHorizontal: Spacing[6], flexGrow: 1 }}
       />
+      
       <TouchableOpacity style={styles.fab} onPress={() => router.push("/(tabs)/produtos/novo")}>
         <Ionicons name="add" size={28} color={Colors.white} />
       </TouchableOpacity>
@@ -78,40 +117,22 @@ export default function ListaProdutos() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
-
-  header: { paddingTop: Spacing[6], gap: Spacing[3], marginBottom: Spacing[4] },
-
-  chips: { flexDirection: "row", gap: Spacing[2], flexWrap: "wrap" },
-
+  header: { paddingTop: Spacing[4], gap: Spacing[3], marginBottom: Spacing[4] },
+  chips: { flexDirection: "row", gap: Spacing[2], flexWrap: "wrap", marginTop: Spacing[2] },
   chip: { paddingHorizontal: Spacing[3], paddingVertical: Spacing[1], borderRadius: 999, backgroundColor: Colors.neutral[100] },
-
   chipAtivo: { backgroundColor: Colors.primary[600] },
-
   chipText: { fontSize: 12, color: Colors.textSecondary, fontWeight: "500" },
-  
   chipTextoAtivo: { color: Colors.white },
-  
   item: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: Spacing[4], backgroundColor: Colors.surface, borderRadius: 12, marginBottom: Spacing[2], borderWidth: 1, borderColor: Colors.border },
-  
   itemInfo: { flex: 1 },
-  
   itemNome: { fontSize: 16, fontWeight: "600", color: Colors.textPrimary },
-  
   itemQtd: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
-  
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-  
   badgeNormal: { backgroundColor: Colors.success.bg },
-  
   badgeAlerta: { backgroundColor: Colors.warning.bg },
-  
   badgeSemEstoque: { backgroundColor: Colors.danger.bg },
-  
   badgeText: { fontSize: 12, fontWeight: "bold" },
-  
   vazio: { alignItems: "center", justifyContent: "center", paddingTop: 80, gap: Spacing[3] },
-  
   vazioText: { color: Colors.textSecondary, fontSize: 16 },
-  
   fab: { position: "absolute", bottom: 24, right: 24, width: 60, height: 60, borderRadius: 30, backgroundColor: Colors.primary[600], alignItems: "center", justifyContent: "center", elevation: 6, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 6 },
 });
