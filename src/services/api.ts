@@ -1,13 +1,18 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 
-const BASE_URL = __DEV__
-  ? "http://192.168.15.12:3333/api" 
-  : "https://sua-api.com/api";
+const API_URL = (Constants.expoConfig?.extra?.apiUrl as string) ?? "http://localhost:3333/api";
+
+export let apiSignOut = async () => {};
+
+export const registerApiSignOut = (fn: () => Promise<void>) => {
+  apiSignOut = fn;
+};
 
 export const api = axios.create({
-  baseURL: BASE_URL,
-  timeout: 10000,
+  baseURL: API_URL,
+  timeout: 10_000,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -21,7 +26,17 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    return Promise.reject(error);
+  async (error) => {
+    const status = error.response?.status;
+
+    if (status === 401) {
+      await apiSignOut();
+    }
+
+    const mensagem =
+      error.response?.data?.erro ??
+      (error.code === "ECONNABORTED" ? "Tempo de conexão esgotado" : "Erro de conexão");
+
+    return Promise.reject(new Error(mensagem));
   }
 );
