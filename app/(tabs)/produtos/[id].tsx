@@ -44,8 +44,7 @@ export default function FormularioProduto() {
           quantidadeMinima: produto.quantidadeMinima, 
           preco: produto.preco, 
           unidade: produto.unidade as any,
-          observacao: produto.observacao ?? "", 
-          foto: produto.foto ?? ""
+          observacao: produto.observacao ?? ""
         });
       }
     }

@@ -1,12 +1,34 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { api } from "../services/api";
-import { useAuth } from "./AuthContext";
-import type { Produto } from "../data/mockData";
-import type { ProdutoFormData } from "../schemas/produtoSchema";
+import { createContext, useContext, useReducer, useEffect, useCallback, useState } from "react";
+import { api } from "@/src/services/api";
+import type { ProdutoFormData } from "@/src/schemas/produtoSchema";
+
+export type Produto = {
+  id: string;
+  nome: string;
+  quantidade: number;
+  quantidadeMinima: number;
+  preco: number;
+  unidade: string;
+  observacao: string | null;
+  categoriaId: string;
+  categoria?: { id: string; nome: string; icone: string; cor: string };
+  ultimaMovimentacao: string;
+  criadoEm: string;
+};
+
+type ProductsState = { produtos: Produto[]; isLoading: boolean; error: string | null };
+type ProductsAction =
+  | { type: "LOAD_START" }
+  | { type: "LOAD_SUCCESS"; payload: Produto[] }
+  | { type: "LOAD_ERROR"; payload: string }
+  | { type: "ADD"; payload: Produto }
+  | { type: "UPDATE"; payload: Produto }
+  | { type: "DELETE"; payload: string };
 
 type ProductsContextType = {
   produtos: Produto[];
   isLoading: boolean;
+  error: string | null;
   carregarProdutos: () => Promise<void>;
   adicionarProduto: (data: ProdutoFormData) => Promise<void>;
   editarProduto: (id: string, data: ProdutoFormData) => Promise<void>;
@@ -14,81 +36,83 @@ type ProductsContextType = {
   getProdutoById: (id: string) => Produto | undefined;
 };
 
+function reducer(state: ProductsState, action: ProductsAction): ProductsState {
+  switch (action.type) {
+    case "LOAD_START":
+      return { ...state, isLoading: true, error: null };
+    case "LOAD_SUCCESS":
+      return { produtos: action.payload, isLoading: false, error: null };
+    case "LOAD_ERROR":
+      return { ...state, isLoading: false, error: action.payload };
+    case "ADD":
+      return { ...state, produtos: [action.payload, ...state.produtos] };
+    case "UPDATE":
+      return { ...state, produtos: state.produtos.map(p => p.id === action.payload.id ? action.payload : p) };
+    case "DELETE":
+      return { ...state, produtos: state.produtos.filter(p => p.id !== action.payload) };
+    default: return state;
+  }
+}
+
 const ProductsContext = createContext<ProductsContextType | null>(null);
 
-export function ProductsProvider({ children }: { children: ReactNode }) {
-  const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth(); 
+export function ProductsProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = useReducer(reducer, {
+    produtos: [],
+    isLoading: false,
+    error: null,
+  });
+
   const carregarProdutos = useCallback(async () => {
-    if (!user) return;
-    setIsLoading(true);
+    dispatch({ type: "LOAD_START" });
     try {
-      const response = await api.get('/produtos');
-      setProdutos(response.data);
-    } catch (error) {
-      console.error("Erro ao carregar produtos do banco:", error);
-    } finally {
-      setIsLoading(false);
+      const { data } = await api.get<Produto[]>("/produtos");
+      dispatch({ type: "LOAD_SUCCESS", payload: data });
+    } catch (error: any) {
+      dispatch({ type: "LOAD_ERROR", payload: error.message });
     }
-  }, [user]);
-  useEffect(() => {
-    carregarProdutos();
-  }, [carregarProdutos]);
+  }, []);
+
+  useEffect(() => { carregarProdutos(); }, [carregarProdutos]);
 
   const adicionarProduto = useCallback(async (data: ProdutoFormData) => {
-    try {
-      const response = await api.post('/produtos', data);
-      setProdutos((prev) => [response.data, ...prev]);
-    } catch (error) {
-      console.error("Erro ao salvar produto:", error);
-      throw error;
-    }
+    const { data: novo } = await api.post<Produto>("/produtos", data);
+    dispatch({ type: "ADD", payload: novo });
   }, []);
 
   const editarProduto = useCallback(async (id: string, data: ProdutoFormData) => {
-    try {
-      const response = await api.put(`/produtos/${id}`, data);
-      setProdutos((prev) => prev.map((p) => (p.id === id ? response.data : p)));
-    } catch (error) {
-      console.error("Erro ao editar produto:", error);
-      throw error;
-    }
+    const { data: atualizado } = await api.put<Produto>(`/produtos/${id}`, data);
+    dispatch({ type: "UPDATE", payload: atualizado });
   }, []);
 
   const deletarProduto = useCallback(async (id: string) => {
-    try {
-      await api.delete(`/produtos/${id}`);
-      setProdutos((prev) => prev.filter((p) => p.id !== id));
-    } catch (error) {
-      console.error("Erro ao deletar produto:", error);
-      throw error;
-    }
+    await api.delete(`/produtos/${id}`);
+    dispatch({ type: "DELETE", payload: id });
   }, []);
 
-  const getProdutoById = useCallback((id: string) => {
-    return produtos.find((p) => p.id === id);
-  }, [produtos]);
+  const getProdutoById = useCallback(
+    (id: string) => state.produtos.find(p => p.id === id),
+    [state.produtos]
+  );
 
   return (
-    <ProductsContext.Provider 
-      value={{ 
-        produtos, 
-        isLoading, 
-        carregarProdutos, 
-        adicionarProduto, 
-        editarProduto, 
-        deletarProduto, 
-        getProdutoById 
-      }}
-    >
+    <ProductsContext.Provider value={{
+      produtos: state.produtos,
+      isLoading: state.isLoading,
+      error: state.error,
+      carregarProdutos,
+      adicionarProduto,
+      editarProduto,
+      deletarProduto,
+      getProdutoById,
+    }}>
       {children}
     </ProductsContext.Provider>
   );
 }
 
 export function useProducts() {
-  const context = useContext(ProductsContext);
-  if (!context) throw new Error("useProducts deve ser usado dentro de ProductsProvider");
-  return context;
+  const ctx = useContext(ProductsContext);
+  if (!ctx) throw new Error("useProducts deve ser usado dentro de ProductsProvider");
+  return ctx;
 }

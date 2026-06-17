@@ -44,25 +44,46 @@ export default function FormularioProduto() {
           quantidadeMinima: produto.quantidadeMinima, 
           preco: produto.preco, 
           unidade: produto.unidade as any,
-          observacao: produto.observacao ?? "", 
-          foto: produto.foto ?? ""
+          observacao: produto.observacao ?? ""
         });
       }
     }
   }, [id]);
 
   const onSubmit = async (data: ProdutoFormData) => {
-    if (modoEdicao && id) await editarProduto(id, data);
-    else await adicionarProduto(data);
+  try {
+    if (modoEdicao && id) {
+      await editarProduto(id, data);
+    } else {
+      await adicionarProduto(data);
+    }
     router.back();
-  };
+  } catch (error: any) {
+    Alert.alert(
+      "Não foi possível salvar",
+      error.message ?? "Verifique sua conexão e tente novamente.",
+      [{ text: "OK" }]
+    );
+  }
+};
 
-  const handleDeletar = () => {
-    Alert.alert("Excluir produto", "Esta ação não pode ser desfeita.", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Excluir", style: "destructive", onPress: async () => { if (id) await deletarProduto(id); router.back(); } },
-    ]);
-  };
+const handleDeletar = () => {
+  Alert.alert("Excluir produto", "Esta ação não pode ser desfeita.", [
+    { text: "Cancelar", style: "cancel" },
+    {
+      text: "Excluir",
+      style: "destructive",
+      onPress: async () => {
+        try {
+          if (id) await deletarProduto(id);
+          router.back();
+        } catch (error: any) {
+          Alert.alert("Erro ao excluir", error.message);
+        }
+      },
+    },
+  ]);
+};
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
