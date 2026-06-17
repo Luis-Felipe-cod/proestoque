@@ -1,84 +1,128 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { Link, router } from 'expo-router';
-import { Button } from '../../src/components/Button';
-import { Input } from '../../src/components/Input';
+import { View, Text, Alert, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { Input } from '../../src/components/Input';
+import { Colors, Spacing } from '../../src/constants/theme';
 
 export default function Cadastro() {
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
-  
-  const { registrar, isLoading } = useAuth();
+  const router = useRouter();  
+  const { registrar, isLoading } = useAuth();  
+  const [form, setForm] = useState({ nome: '', email: '', senha: '', confirmarSenha: '' });
+  const [erroSenha, setErroSenha] = useState('');
+
+  const updateForm = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
 
   const handleCadastro = async () => {
-    if (!nome || !email || !senha || !confirmarSenha) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+    setErroSenha('');
+    
+    if (!form.nome || !form.email || !form.senha) {
+      Alert.alert("Atenção", "Preencha todos os campos obrigatórios.");
       return;
     }
 
-    if (senha !== confirmarSenha) {
-      Alert.alert('Erro', 'As senhas não coincidem.');
+    if (form.senha !== form.confirmarSenha) {
+      setErroSenha('As senhas não coincidem');
       return;
     }
-
-    if (senha.length < 6) {
-      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres.');
+    
+    if (form.senha.length < 6) {
+      Alert.alert("Atenção", "A senha deve ter pelo menos 6 caracteres.");
       return;
     }
-
+    
     try {
-      await registrar(nome, email, senha);
-      router.replace('/(tabs)');
+      await registrar(form.nome, form.email, form.senha);
+
     } catch (error: any) {
-      Alert.alert('Erro no Registo', error.message);
+      Alert.alert("Erro ao criar conta", error.message);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-      <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Criar Conta</Text>
-          <Text style={styles.subtitle}>Preencha os seus dados para começar</Text>
+          <Text style={styles.titulo}>Criar Conta</Text>
+          <Text style={styles.subtitulo}>Preencha os dados para se cadastrar</Text>
         </View>
 
         <View style={styles.form}>
-          <Input label="Nome completo" placeholder="Digite o seu nome" value={nome} onChangeText={setNome} autoCapitalize="words" />
-          <Input label="E-mail" placeholder="Digite o seu e-mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-          <Input label="Senha" placeholder="Crie uma senha" value={senha} onChangeText={setSenha} secureTextEntry />
-          <Input label="Confirmar Senha" placeholder="Confirme a sua senha" value={confirmarSenha} onChangeText={setConfirmarSenha} secureTextEntry />
+          <Text style={styles.label}>Nome completo</Text>
+          <Input 
+            placeholder="Seu nome" 
+            value={form.nome} 
+            onChangeText={(text: string) => updateForm('nome', text)} 
+          />
 
-          {isLoading ? (
-            <ActivityIndicator size="large" color="#0284c7" style={{ marginTop: 20 }} />
-          ) : (
-            <Button label="Registar" onPress={handleCadastro} />
-          )}
+          <Text style={styles.label}>E-mail</Text>
+          <Input 
+            placeholder="seu@email.com" 
+            keyboardType="email-address" 
+            autoCapitalize="none"
+            value={form.email} 
+            onChangeText={(text: string) => updateForm('email', text)} 
+          />
+
+          <Text style={styles.label}>Senha</Text>
+          <Input 
+            placeholder="No mínimo 6 caracteres" 
+            secureTextEntry 
+            value={form.senha} 
+            onChangeText={(text: string) => updateForm('senha', text)} 
+          />
+
+          <Text style={styles.label}>Confirmar Senha</Text>
+          <Input 
+            placeholder="Repita sua senha" 
+            secureTextEntry 
+            value={form.confirmarSenha} 
+            onChangeText={(text: string) => updateForm('confirmarSenha', text)} 
+          />
+          {erroSenha ? <Text style={styles.erroText}>{erroSenha}</Text> : null}
+
+          <TouchableOpacity 
+            style={[styles.botao, isLoading && styles.botaoDisabled]} 
+            onPress={handleCadastro}
+            disabled={isLoading}
+          >
+            <Text style={styles.botaoTexto}>
+              {isLoading ? "Cadastrando..." : "Cadastrar"}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Já tem uma conta? </Text>
-          <Link href="/login" asChild>
-            <TouchableOpacity>
-              <Text style={styles.loginLink}>Iniciar Sessão</Text>
-            </TouchableOpacity>
-          </Link>
+          <Text style={styles.footerText}>Já tem uma conta?</Text>
+          <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
+            <Text style={styles.link}>Faça login</Text>
+          </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: { flexGrow: 1 },
-  container: { flex: 1, padding: 24, backgroundColor: '#f8fafc', justifyContent: 'center' },
-  header: { marginBottom: 32 },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#0f172a', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#64748b' },
-  form: { gap: 16 },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 32 },
-  footerText: { color: '#64748b', fontSize: 14 },
-  loginLink: { color: '#0284c7', fontSize: 14, fontWeight: 'bold' },
+  container: { flex: 1, backgroundColor: Colors.background },
+  scroll: { flexGrow: 1, padding: Spacing[6], justifyContent: 'center' },
+  
+  header: { marginBottom: Spacing[6] },
+  titulo: { fontSize: 28, fontWeight: 'bold', color: Colors.textPrimary, marginBottom: Spacing[2] },
+  subtitulo: { fontSize: 16, color: Colors.textSecondary },
+  
+  form: { gap: Spacing[3] },
+  label: { fontSize: 14, fontWeight: '500', color: Colors.textPrimary, marginBottom: -4, marginTop: Spacing[2] },
+  erroText: { color: Colors.danger.text, fontSize: 12, marginTop: -4 },
+  
+  botao: { backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: 8, alignItems: 'center', marginTop: Spacing[4] },
+  botaoDisabled: { opacity: 0.7 },
+  botaoTexto: { color: Colors.white, fontSize: 16, fontWeight: 'bold' },
+  
+  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: Spacing[6], gap: Spacing[2] },
+  footerText: { color: Colors.textSecondary, fontSize: 14 },
+  link: { color: Colors.primary[600], fontSize: 14, fontWeight: 'bold' },
 });
