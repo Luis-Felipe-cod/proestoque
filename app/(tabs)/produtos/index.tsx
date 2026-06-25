@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useProducts } from "../../../src/contexts/ProductsContext";
 import { useCategorias } from "../../../src/hooks/useCategorias";
 import { Input } from "../../../src/components/Input";
-import { LoadingView } from "../../../src/components/LoadingView";
+import { ProdutoListaSkeleton } from "../../../src/components/ProdutoSkeleton";
 import { ErrorView } from "../../../src/components/ErrorView";
 import { Colors, Spacing } from "../../../src/constants/theme";
 
@@ -49,7 +49,11 @@ export default function ListaProdutos() {
   }, []);
 
   if (isLoading && produtos.length === 0) {
-    return <LoadingView mensagem="Buscando produtos..." />;
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+        <ProdutoListaSkeleton count={7} />
+      </SafeAreaView>
+    );
   }
 
   if (error && produtos.length === 0) {

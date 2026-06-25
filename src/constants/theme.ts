@@ -27,7 +27,6 @@ export const Colors = {
   danger:  { bg: "#fee2e2", text: "#991b1b", border: "#f87171" },
   info:    { bg: "#dbeafe", text: "#1e40af", border: "#60a5fa" },
 
-  // Atalhos semânticos (os mais usados no dia a dia)
   background: "#f9fafb",    // Fundo das telas
   surface:    "#ffffff",    // Fundo de cards
   textPrimary:   "#111827", // Texto principal

@@ -6,7 +6,7 @@ import { router } from "expo-router";
 
 import { useAuth } from "../../src/contexts/AuthContext";
 import { useProducts } from "../../src/contexts/ProductsContext";
-import { LoadingView } from "../../src/components/LoadingView";
+import { DashboardSkeleton } from "../../src/components/DashboardSkeleton";
 import { formatarPreco } from "../../src/utils/formatters";
 import { Colors, Spacing } from "../../src/constants/theme";
 
@@ -41,7 +41,7 @@ export default function HomeScreen() {
   }, [carregarProdutos]);
 
   if (isLoading && produtos.length === 0) {
-    return <LoadingView mensagem="Carregando dashboard..." />;
+    return <DashboardSkeleton />;
   }
 
   const DashboardHeader = () => (
